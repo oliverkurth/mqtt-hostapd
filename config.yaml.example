@@ -1,0 +1,14 @@
+mqtt:
+    server: 192.168.1.2
+    port: 1883
+    state_topic: "state/hostapd"
+    autodiscovery: true
+    id_prefix: "hostapd-"
+
+hostapd:
+    interface: ap1
+
+devices:
+    xxyyxxyyxxyy:
+        name: "WiFi Oliver Pixel"
+        autodiscovery: true
