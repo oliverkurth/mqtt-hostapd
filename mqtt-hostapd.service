@@ -1,0 +1,13 @@
+[Unit]
+Description=Send hostapd connection status over MQTT
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=/etc/mqtt-hostapd
+ExecStart=/usr/local/bin/mqtt-hostapd
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
