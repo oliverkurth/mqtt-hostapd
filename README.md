@@ -14,7 +14,7 @@ Hostapd installed and running. python. An MQTT server somewhere on your network.
 
 Probably Homeassistant running somewhere on your network, but in principle this can be used with anything that understands MQTT.
 
-## Installation:
+## Installation
 
 This needs to be installed on the same host as hostapd.
 
@@ -25,7 +25,7 @@ pip install .
 
 Edit the file `config.yaml.exampple` and configure (at least) your MQTT server, and probably the interface name for `hostapd`.
 
-Under `devices`, add devices (probably your families phones) to be tracked. The keys are the MAC addresses of the WifI devices, but with colons removed.
+Under `devices`, add devices (probably your familiy's phones) to be tracked. The keys are the MAC addresses of the WifI devices, but with colons removed.
 So `11:22:33:44:55:66` becomes `112233445566`.
 
 You can test with just running `mqtt-hostapd`. If `autodiscovery` is enabled,
