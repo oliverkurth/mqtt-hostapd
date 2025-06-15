@@ -61,10 +61,10 @@ def connect_hostapd(hostapd_config):
     s_local = "/tmp/mqtt-hostapd-{}".format(os.getpid())
     s.bind(s_local)
     s.connect(os.path.join(hostapd_config.get("ctrl_dir", HOSTAPD_CTRL_DIR), hostapd_config.get("interface")))
-    s.send("ATTACH")
+    s.send(b"ATTACH")
 
     response = s.recv(1024)
-    if not response.startswith("OK"):
+    if not response.startswith(b"OK"):
         raise Exception("unexpected response from hostapd: {}\n".format(response))
 
     return s
@@ -72,11 +72,13 @@ def connect_hostapd(hostapd_config):
 
 def parse_hostapd_data(data):
     try:
-        what, mac = data[data.find(">") + 1:].split(' ')
-        id = mac.replace(':', '')
+        what, mac = data[data.find(b">") + 1:].split(b" ")
+        what = what.decode()
+        mac = mac.decode()
+        id = mac.replace(":", "")
         return what, id
     except ValueError:
-        print ("could not parse '{}'".format(data))
+        print ("could not parse '{}'".format(data.decode()))
         return None, None
 
 
@@ -84,8 +86,10 @@ def main():
     with open(CONFIG_FILE, 'r') as f:
         config = yaml.safe_load(f)
 
+    devices = config.get('devices', {})
+
     client = connect_mqtt(config['mqtt'])
-    mqtt_autodiscovery(client, config['mqtt'], config['devices'])
+    mqtt_autodiscovery(client, config['mqtt'], devices)
 
     s = connect_hostapd(config["hostapd"])
 
@@ -96,20 +100,27 @@ def main():
             data = s.recv(1024)
             what, id = parse_hostapd_data(data)
 
-            if what == "AP-STA-CONNECTED":
-                what = "connected"
-            elif what == "AP-STA-DISCONNECTED":
-                what = "disconnected"
-            else:
-                what = "unknown"
-            print ("{} {}".format(what, id))
+            print(f"{what} {id}")
 
-            if what == "connected" or what == "disconnected":
+            device_name = "(unconfigured)"
+            if id in devices:
+                device_name = devices[id].get('name', "(no name)")
+
+            if what == "AP-STA-CONNECTED":
+                print(f"device {device_name} ({id}) has connected")
+                status = "connected"
+            elif what == "AP-STA-DISCONNECTED":
+                print(f"device {device_name} ({id}) has disconnected")
+                status = "disconnected"
+            else:
+                status = "unknown"
+
+            if status == "connected" or status == "disconnected":
                 if not client.is_connected:
                     print ("MQTT reconnect\n")
                     client.reconnect()
 
-                client.publish("{}/{}".format(config['mqtt'].get('state_topic', MQTT_STATE_TOPIC), id), what)
+                client.publish("{}/{}".format(config['mqtt'].get('state_topic', MQTT_STATE_TOPIC), id), status)
 
         except socket.timeout:
             pass
